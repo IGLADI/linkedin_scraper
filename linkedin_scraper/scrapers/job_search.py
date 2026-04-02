@@ -38,49 +38,74 @@ class JobSearchScraper(BaseScraper):
         """
         super().__init__(page, callback or SilentCallback())
     
+    async def scrape_current_page(self, limit_left: int) -> List[str]:
+        await self.page.wait_for_selector('a[href*="/jobs/view/"]', timeout=10000)
+        await self.wait_and_focus(3)
+
+        count = await self.page.locator("li.scaffold-layout__list-item").count()
+        for i in range(count):
+            selector = f"li.scaffold-layout__list-item >> nth={i}"
+            await self.scroll_element_into_view(selector)
+
+        await self.wait_and_focus(2)
+        return await self._extract_job_urls(limit_left)
+
+
     async def search(
         self,
         keywords: Optional[str] = None,
         location: Optional[str] = None,
         limit: int = 25
     ) -> List[str]:
-        """
-        Search for jobs on LinkedIn.
-        
-        Args:
-            keywords: Job search keywords (e.g., "software engineer")
-            location: Job location (e.g., "San Francisco, CA")
-            limit: Maximum number of job URLs to return
-            
-        Returns:
-            List of job posting URLs
-        """
         logger.info(f"Starting job search: keywords='{keywords}', location='{location}'")
-        
+
         search_url = self._build_search_url(keywords, location)
         await self.callback.on_start("JobSearch", search_url)
-        
         await self.navigate_and_wait(search_url)
-        await self.callback.on_progress("Navigated to search results", 20)
-        
-        try:
-            await self.page.wait_for_selector('a[href*="/jobs/view/"]', timeout=10000)
-        except:
-            logger.warning("No job listings found on page")
-            return []
-        
-        await self.wait_and_focus(1)
-        await self.scroll_page_to_bottom(pause_time=1, max_scrolls=3)
-        await self.callback.on_progress("Loaded job listings", 50)
-        
-        job_urls = await self._extract_job_urls(limit)
-        await self.callback.on_progress(f"Found {len(job_urls)} job URLs", 90)
-        
-        await self.callback.on_progress("Search complete", 100)
-        await self.callback.on_complete("JobSearch", job_urls)
-        
-        logger.info(f"Job search complete: found {len(job_urls)} jobs")
-        return job_urls
+
+        all_job_urls = []
+        seen = set()
+
+        while len(all_job_urls) < limit:
+            try:
+                job_urls = await self.scrape_current_page(limit - len(all_job_urls))
+            except Exception as e:
+                logger.warning(f"Failed to scrape current page: {e}")
+                break
+
+            for url in job_urls:
+                if url not in seen:
+                    seen.add(url)
+                    all_job_urls.append(url)
+
+            if len(all_job_urls) >= limit:
+                break
+
+            next_selector = 'button[aria-label="View next page"]'
+            next_button = self.page.locator(next_selector).first
+
+            if await next_button.count() == 0:
+                logger.info("No next page button found")
+                break
+
+            try:
+                await next_button.scroll_into_view_if_needed()
+            except:
+                pass
+
+            clicked = await self.safe_click(next_selector, timeout=5000)
+            if not clicked:
+                logger.info("Could not click next page button")
+                break
+
+            try:
+                await self.page.wait_for_load_state("domcontentloaded")
+                await self.page.wait_for_timeout(1500)
+            except:
+                pass
+
+        await self.callback.on_progress(f"Found {len(all_job_urls)} job URLs", 90)
+        return all_job_urls[:limit]
     
     def _build_search_url(
         self,
