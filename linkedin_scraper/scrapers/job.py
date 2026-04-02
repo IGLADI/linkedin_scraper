@@ -98,15 +98,16 @@ class JobScraper(BaseScraper):
         
         logger.info(f"Successfully scraped job: {job_title}")
         return job
-    
+
     async def _get_job_title(self) -> Optional[str]:
         """Extract job title from h1 heading."""
         try:
-            title_elem = self.page.locator('h1').first
-            title = await title_elem.inner_text()
-            return title.strip()
+            title_elem = self.page.locator('p._880950ad._07f7caa4').first
+            if await title_elem.count() > 0:
+                return (await title_elem.inner_text()).strip()
         except:
-            return None
+            pass
+        return None
     
     async def _get_company(self) -> Optional[str]:
         """Extract company name from company link."""
@@ -185,21 +186,12 @@ class JobScraper(BaseScraper):
         except:
             pass
         return None
-    
+
     async def _get_description(self) -> Optional[str]:
-        """Extract job description from article or about section."""
         try:
-            about_heading = self.page.locator('h2:has-text("About the job")').first
-            if await about_heading.count() > 0:
-                article = about_heading.locator('xpath=ancestor::article[1]')
-                if await article.count() > 0:
-                    description = await article.inner_text()
-                    return description.strip()
-            
-            article = self.page.locator('article').first
-            if await article.count() > 0:
-                description = await article.inner_text()
-                return description.strip()
+            container = self.page.locator('span[data-testid="expandable-text-box"]').first
+            await container.wait_for(state="visible", timeout=5000)
+            text = (await container.inner_text()).strip()
+            return text or None
         except:
-            pass
-        return None
+            return None
