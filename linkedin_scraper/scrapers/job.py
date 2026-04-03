@@ -100,11 +100,11 @@ class JobScraper(BaseScraper):
         return job
 
     async def _get_job_title(self) -> Optional[str]:
-        """Extract job title from h1 heading."""
+        """Extract job title from the 3rd p element on the page."""
         try:
-            title_elem = self.page.locator('p._880950ad._07f7caa4').first
-            if await title_elem.count() > 0:
-                return (await title_elem.inner_text()).strip()
+            p_elements = self.page.locator("p")
+            if await p_elements.count() > 2:
+                return (await p_elements.nth(2).inner_text()).strip()
         except:
             pass
         return None
