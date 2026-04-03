@@ -133,6 +133,8 @@ class JobScraper(BaseScraper):
                 if href:
                     if '?' in href:
                         href = href.split('?')[0]
+                    if '/life' in href:
+                        href = href.split('/life')[0]
                     if not href.startswith('http'):
                         href = f"https://www.linkedin.com{href}"
                     return href

@@ -28,10 +28,8 @@ async def scrape_jobs(
                 "url": url,
                 "job_title": job.job_title,
                 "company": job.company,
-                # "location": job.location,
-                # "posted_date": job.posted_date,
-                # "applicant_count": job.applicant_count,
-                "job_description": job.job_description,
+                "company_url": job.company_linkedin_url,
+                "job_description": job.job_description
             })
 
         return {
