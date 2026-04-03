@@ -19,9 +19,9 @@ async def main():
         search_scraper = JobSearchScraper(browser.page)
         print("🔍 Searching for jobs...")
         job_urls = await search_scraper.search(
-            keywords="software engineer",
-            location="Toronto",
-            limit=5
+            keywords="Cybersecurity",
+            location="Germany",
+            limit=2
         )
         
         print(f"\n✓ Found {len(job_urls)} jobs")
@@ -38,6 +38,7 @@ async def main():
                 print("\n" + "="*60)
                 print(f"Title: {job.job_title}")
                 print(f"Company: {job.company}")
+                print(f"Company URL: {job.company_linkedin_url}")
                 print(f"Location: {job.location}")
                 print(f"Posted: {job.posted_date}")
                 print(f"Applicants: {job.applicant_count}")
