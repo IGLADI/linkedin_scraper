@@ -26,6 +26,7 @@ class Company(BaseModel):
     """
     linkedin_url: str
     name: Optional[str] = None
+    company_id: Optional[str] = None
     about_us: Optional[str] = None
     website: Optional[str] = None
     phone: Optional[str] = None

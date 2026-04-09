@@ -6,6 +6,7 @@ Extracts company information from LinkedIn company pages.
 import logging
 from typing import Optional
 from playwright.async_api import Page
+from urllib.parse import urlparse, parse_qs
 
 from ..models.company import Company
 from ..core.exceptions import ProfileNotFoundError
@@ -69,12 +70,17 @@ class CompanyScraper(BaseScraper):
         # Extract overview details
         overview = await self._get_overview()
         await self.callback.on_progress("Got overview details", 50)
+
+        # Extract company id to fetch company jobs
+        await self.wait_and_focus(5)
+        company_id = await self._get_company_id(linkedin_url)
+        await self.wait_and_focus(5)
         
         # Create company object
         company = Company(
             linkedin_url=linkedin_url,
+            company_id=company_id,
             name=name,
-            about_us=about_us,
             **overview
         )
         
@@ -83,6 +89,48 @@ class CompanyScraper(BaseScraper):
         
         logger.info(f"Successfully scraped company: {name}")
         return company
+
+    async def _get_company_id(self, linkedin_url: str) -> Optional[str]:
+        try:
+            if not await self._goto_jobs_section(linkedin_url):
+                return None
+
+            selector = 'a[data-view-name="org-member-jobs-job-search-button"]'
+            await self.scroll_element_into_view(selector)
+
+            search_button = self.page.locator(selector).first
+            if await search_button.count() > 0:
+                href = await search_button.get_attribute("href")
+                if href:
+                    query = parse_qs(urlparse(href).query)
+                    values = query.get("f_C")
+                    return values[0] if values else None
+
+        except Exception:
+            pass
+
+        return None
+
+    async def _goto_jobs_section(self, linkedin_url: str) -> bool:
+        try:
+            path = urlparse(linkedin_url).path.strip("/")
+            parts = path.split("/")
+            company_name = parts[1] if len(parts) >= 2 and parts[0] == "company" else None
+            if not company_name:
+                return False
+
+            job_selector = f'a[href*="/company/{company_name}/jobs/"]'
+            job_link = self.page.locator(job_selector).first
+
+            if await job_link.count() > 0:
+                await self.scroll_element_into_view(job_selector)
+                await job_link.click()
+                return True
+
+        except Exception:
+            pass
+
+        return False
     
     async def _get_name(self) -> str:
         """Extract company name."""
