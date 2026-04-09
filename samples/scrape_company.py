@@ -11,7 +11,7 @@ from linkedin_scraper.core.browser import BrowserManager
 
 async def main():
     """Scrape a single company"""
-    company_url = "https://www.linkedin.com/company/microsoft/"
+    company_url = "https://www.linkedin.com/company/sibelga/"
     
     # Initialize and start browser using context manager
     async with BrowserManager(headless=False) as browser:
@@ -29,13 +29,8 @@ async def main():
         # Display results
         print("\n" + "="*60)
         print(f"Name: {company.name}")
-        print(f"Industry: {company.industry}")
-        print(f"Company Size: {company.company_size}")
-        print(f"Headquarters: {company.headquarters}")
-        print(f"Founded: {company.founded}")
+        print(f"Company Id: {company.company_id}")
         print(f"Website: {company.website}")
-        if company.about_us:
-            print(f"About: {company.about_us[:150]}...")
         print("="*60)
     
     print("\n✓ Done!")

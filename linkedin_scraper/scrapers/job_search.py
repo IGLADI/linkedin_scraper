@@ -55,13 +55,20 @@ class JobSearchScraper(BaseScraper):
         self,
         keywords: Optional[str] = None,
         location: Optional[str] = None,
+        search_url: Optional[str] = None,
         limit: int = 25
     ) -> List[str]:
-        logger.info(f"Starting job search: keywords='{keywords}', location='{location}'")
+        logger.info(
+            f"Starting job search: keywords='{keywords}', location='{location}', search_url='{search_url}'"
+        )
 
-        search_url = self._build_search_url(keywords, location)
-        await self.callback.on_start("JobSearch", search_url)
-        await self.navigate_and_wait(search_url)
+        if search_url:
+            search_url_to_use = search_url
+        else:
+            search_url_to_use = self._build_search_url(keywords, location)
+
+        await self.callback.on_start("JobSearch", search_url_to_use)
+        await self.navigate_and_wait(search_url_to_use)
 
         all_job_urls = []
         seen = set()

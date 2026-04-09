@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 import asyncio
+from typing import Optional
+
 from linkedin_scraper.scrapers.job_search import JobSearchScraper
 from linkedin_scraper.scrapers.job import JobScraper
 from linkedin_scraper.core.browser import BrowserManager
 
 async def scrape_jobs(
-    keywords: str, 
-    location: str, 
-    limit: int = 5
+    limit: int = 5,
+    keywords: Optional[str] = None,
+    location: Optional[str] = None,
+    search_url: Optional[str] = None,
 ):
+    if search_url:
+        if keywords or location:
+            raise ValueError("Provide either search_url or keywords+location, not both.")
+    else:
+        if not keywords or not location:
+            raise ValueError("Provide both keywords and location, or provide search_url.")
+
     async with BrowserManager(headless=True) as browser:
         await browser.load_session("linkedin_session.json")
 
@@ -16,7 +26,8 @@ async def scrape_jobs(
         job_urls = await search_scraper.search(
             keywords=keywords,
             location=location,
-            limit=limit
+            search_url=search_url,
+            limit=limit,
         )
 
         jobs = []
