@@ -1,9 +1,10 @@
 # Build with:
 # python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements-dev.txt && python3 -m pip install -e .
 from fastapi import FastAPI, Query, HTTPException
-from api.scrape_jobs import scrape_jobs
-from api.scrape_person import scrape_person
 from api.create_session import create_session
+from api.scrape_jobs import scrape_jobs
+from api.scrape_company import scrape_company
+from api.scrape_person import scrape_person
 
 # uvicorn main:app --host 0.0.0.0 --port 9000
 app = FastAPI()
@@ -37,6 +38,22 @@ async def get_jobs(
             "keywords": keywords,
             "country": country,
             "limit": limit,
+            **result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# curl "http://localhost:9000/company?company_url=https%3A%2F%2Fwww.linkedin.com%2Fcompany%2Fmicrosoft%2F"
+@app.get("/company")
+async def get_company(
+    company_url: str = Query(...),
+):
+    try:
+        result = await scrape_company(
+            company_url=company_url
+        )
+        return {
+            "company_url": company_url,
             **result
         }
     except Exception as e:
