@@ -1,6 +1,8 @@
 # Build with:
 # python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements-dev.txt && python3 -m pip install -e .
 from fastapi import FastAPI, Query, HTTPException
+from typing import Optional
+
 from api.create_session import create_session
 from api.scrape_jobs import scrape_jobs
 from api.scrape_company import scrape_company
@@ -22,13 +24,37 @@ async def refresh_linkedin_session(
         raise HTTPException(status_code=500, detail=str(e))
 
 # curl "http://localhost:9000/jobs?keywords=software%20engineer&country=Toronto&limit=5"
+# curl "http://localhost:9000/jobs?search_url=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fsearch%2F%3Ff_C%3D165953%26geoId%3D100565514"
 @app.get("/jobs")
 async def get_jobs(
-    keywords: str = Query(...),
-    country: str = Query(...),
-    limit: int = Query(5, ge=1, le=500)
+    keywords: Optional[str] = Query(None),
+    country: Optional[str] = Query(None),
+    search_url: Optional[str] = Query(None),
+    limit: int = Query(5, ge=1, le=500),
 ):
     try:
+        if search_url:
+            if keywords or country:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Provide either search_url or keywords+country, not both."
+                )
+            result = await scrape_jobs(
+                search_url=search_url,
+                limit=limit
+            )
+            return {
+                "search_url": search_url,
+                "limit": limit,
+                **result
+            }
+
+        if not keywords or not country:
+            raise HTTPException(
+                status_code=400,
+                detail="Provide both keywords and country, or provide search_url."
+            )
+
         result = await scrape_jobs(
             keywords=keywords,
             location=country,
@@ -40,6 +66,7 @@ async def get_jobs(
             "limit": limit,
             **result
         }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
