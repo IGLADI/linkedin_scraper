@@ -4,7 +4,7 @@ import logging
 import re
 from typing import Optional, List
 from urllib.parse import urljoin
-from playwright.async_api import Page
+from patchright.async_api import Page
 
 from .base import BaseScraper
 from ..models import Person, Experience, Education

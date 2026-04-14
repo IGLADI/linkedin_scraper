@@ -5,7 +5,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
-from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
+from patchright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
 
 from .exceptions import NetworkError
 

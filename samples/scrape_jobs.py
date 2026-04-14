@@ -20,8 +20,8 @@ async def main():
         print("🔍 Searching for jobs...")
         job_urls = await search_scraper.search(
             keywords="Cybersecurity",
-            location="Germany",
-            limit=2
+            location="Belgium",
+            limit=26
         )
         
         print(f"\n✓ Found {len(job_urls)} jobs")
