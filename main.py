@@ -1,5 +1,5 @@
 # Build with:
-# python3 -m venv .venv && source .venv/bin/activate && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements-dev.txt && python3 -m pip install -e .
+# uv sync --frozen --no-dev && uv run playwright install --with-deps chromium
 from fastapi import FastAPI, Query, HTTPException
 from typing import Optional
 
@@ -8,7 +8,7 @@ from api.scrape_jobs import scrape_jobs
 from api.scrape_company import scrape_company
 from api.scrape_person import scrape_person
 
-# uvicorn main:app --host 0.0.0.0 --port 9000
+# uv run uvicorn main:app --host 0.0.0.0 --port 9000
 app = FastAPI()
 
 # curl -X POST "http://localhost:9000/auth/linkedin/refresh?email=test%40example.uk&password=%23uGfoFZSz6w4hQ9P" (needs encoding)
